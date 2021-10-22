@@ -24,7 +24,7 @@ from scipy.sparse import csr_matrix, dok_matrix
           
           sigma: N**2x1 matrix containing spins 
                       
-    CHECKER BOARD structure is used with some
+    CHECKER BOARD structure is used with some minor
     modifications. Memory requirements might jump a bit
     as some masking matrices needs to be stored, yet 
     sparse nature of matrices  doesn't contribute much to memory demand.
