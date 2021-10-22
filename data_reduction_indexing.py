@@ -7,10 +7,6 @@ from scipy.sparse import csr_matrix, dok_matrix
     This section of code reduces 2D Ising model 
     to a comfortable for computation form (matrices). 
     
-    Data reduction will help us avoid for loops in computation,
-    i.e. step by step update of the spins. Furthermore, speed
-    gain comes from sparse matrix operations. 
-    
     Hamiltonian (energy) of a system is given as:
     
     E = - sum_<x,y> (J * sigma_<x> * sigma_<y>)  (no external field)
@@ -26,15 +22,12 @@ from scipy.sparse import csr_matrix, dok_matrix
                       
           J_south, J_west, J_east, M_south... etc are similar matrices.
           
-          sigma: N**2x1 matrix containing spins (the bottleneck,
-                 unavoidable size spins need to be stored)
+          sigma: N**2x1 matrix containing spins 
                       
-    In essence CHECKER BOARD structure is used with some
+    CHECKER BOARD structure is used with some
     modifications. Memory requirements might jump a bit
     as some masking matrices needs to be stored, yet 
-    benefit of performance gain of linear operations is 
-    way more. Furthermore very sparse nature of matrices
-    doesn't contribute much to memory demand.
+    sparse nature of matrices  doesn't contribute much to memory demand.
  """
 
 
