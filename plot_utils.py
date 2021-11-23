@@ -5,6 +5,7 @@ from mpl_toolkits import axisartist
 import matplotlib.pyplot as plt
 from matplotlib import ticker, get_backend, rc
 import matplotlib as mpl
+import seaborn as sns
 
 mpl.rcParams['agg.path.chunksize'] = 10000
 
@@ -129,7 +130,7 @@ def plot_upper_bound(interaction_dict: defaultdict,
                 marker='o', edgecolor='k', color=(86/255, 101/255, 105/255),
                 linewidth=0.2, s=5, label="1")
     plt.legend()
-    plt.savefig("Bounds0.jpeg", dpi=1000)
+    # plt.savefig("Bounds0.jpeg", dpi=1000)
     plt.close()
 
     return None
@@ -145,16 +146,34 @@ def plot_probability(interaction_dict: defaultdict,
 
         for element in range(1, spin_matrix_size):
 
-            if spins[element] == 1:
-                visualization_sum_positives.append(sum(interaction_dict[element]))
+            if spins[element-1] == 1:
+                visualization_sum_positives.append(np.sum(interaction_dict[element]))
 
-            if spins[element] == -1:
-                visualization_sum_negatives.append(sum(interaction_dict[element]))
+            if spins[element-1] == -1:
+                visualization_sum_negatives.append(np.sum(interaction_dict[element]))
 
         print(np.mean(visualization_sum_negatives))
         print(np.mean(visualization_sum_positives))
 
         return None
+
+
+def plot_mobility(spin_mobility: np.ndarray,
+                  n: int,
+                  final_energy: float) -> None:
+
+    cmaps = ['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+             'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
+             'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral', 'gist_ncar']
+
+    plt.imshow(np.reshape(spin_mobility, (n, n)), cmap="gnuplot")
+    plt.savefig("Mob: spin_size{}_ising_energy{}.jpeg".format(n, final_energy), dpi=1000)
+    plt.close()
+
+    sns.kdeplot(data=np.reshape(spin_mobility, -1), bw_adjust=.5)
+    plt.savefig("Mobility{}_{}.jpeg".format(n, final_energy), dpi=1000)
+    plt.close()
+    return None
 
     # fig, ax1, ax2, ax3 = plt.subplots()
     #

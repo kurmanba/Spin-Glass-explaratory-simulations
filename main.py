@@ -168,6 +168,7 @@ Value = np.reshape(np.zeros((1, n ** 2)), (n, n))
 iterations = 15
 counter = 0
 teta = 0.4
+# ______________________________________________________________________________
 
 # Main Loop
 while counter < iterations:

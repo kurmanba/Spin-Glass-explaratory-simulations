@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
 from scipy.sparse import csr_matrix, dok_matrix
@@ -32,7 +31,7 @@ from scipy.sparse import csr_matrix, dok_matrix
 
 
 def relation_matrix(n: int,
-                    seed=118) -> tuple:
+                    seed: int) -> tuple:
     """
     Function was written to structure the neighborhood.
     Fore each cell it returns neighbors in a dict format.
@@ -58,7 +57,7 @@ def relation_matrix(n: int,
     spins_vector: +1 , -1 spins
     """
 
-    np.random.seed(seed)
+    np.random.seed(int(seed))
 
     relation_dict = defaultdict()                                           # Relation of each neighbor to each other
     interaction_dict = defaultdict()                                        # Interactions saved with checker board rule
@@ -86,11 +85,11 @@ def relation_matrix(n: int,
                                              periodic[x][y - 1]]                               # West
 
             if checker_board_selection[x-n][y-n] == 1:
-
-                interaction_dict[periodic[x][y]] = [np.random.normal(0, 1, size=1),            # North
-                                                    np.random.normal(0, 1, size=1),            # South
-                                                    np.random.normal(0, 1, size=1),            # East
-                                                    np.random.normal(0, 1, size=1)]            # West
+                mean, var = 0, 1                                                              # integers mean & variance
+                interaction_dict[periodic[x][y]] = [np.random.normal(np.random.randint(mean, var), size=1),  # North
+                                                    np.random.normal(np.random.randint(mean, var), size=1),  # South
+                                                    np.random.normal(np.random.randint(mean, var), size=1),  # East
+                                                    np.random.normal(np.random.randint(mean, var), size=1)]  # West
 
     for x in range(n, 2 * n):                                                         # full interactions for simulation
         for y in range(n, 2 * n):

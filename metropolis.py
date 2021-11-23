@@ -1,15 +1,18 @@
-from matplotlib import pyplot as plt
 from data_reduction_indexing import *
 from tqdm import tqdm
 from plot_utils import *
+from metropolis_env import Metropolis
+from matplotlib import animation
+from skvideo.io import FFmpegWriter
+from matplotlib import cm
 
-lattice_size = 100                                             # Only even numbers to not break checkerboard formation
-# temperature = 20                                             # beta = 1/kT  here k = 1
-metropolis_steps = 10_000_000                                 # of metropolis iterations
+lattice_size = 50                                               # Only even numbers to not break checkerboard formation
+# temperature = 20                                              # beta = 1/kT  here k = 1
+metropolis_steps = 1_000_000_00                                 # of metropolis iterations
 
 
 def initial_energy(structured_data: tuple,
-                   external_field=3) -> float:
+                   external_field: float) -> float:
 
     """
     Function computes energy at the first monte-carlo run.
@@ -39,7 +42,7 @@ def initial_energy(structured_data: tuple,
     hamiltonian = -(hamiltonian_north + hamiltonian_south + hamiltonian_east + hamiltonian_west)
 
     if external_field != 0:
-        hamiltonian -= sum(sigma) * external_field
+        hamiltonian -= np.sum(sigma) * external_field
 
     return hamiltonian
 
@@ -82,10 +85,10 @@ def energy_change(structured_data: tuple,
 
     relation_dict, full_interaction_dict, spin_vector = structured_data[8], structured_data[9], structured_data[10]
 
-    j = [np.vstack(full_interaction_dict[metropolis_selection])[0][0],
-         np.vstack(full_interaction_dict[metropolis_selection])[1][0],
-         np.vstack(full_interaction_dict[metropolis_selection])[2][0],
-         np.vstack(full_interaction_dict[metropolis_selection])[3][0]]
+    j = [(full_interaction_dict[metropolis_selection])[0][0],
+         (full_interaction_dict[metropolis_selection])[1][0],
+         (full_interaction_dict[metropolis_selection])[2][0],
+         (full_interaction_dict[metropolis_selection])[3][0]]
 
     indexes = relation_dict[metropolis_selection]
 
@@ -93,9 +96,7 @@ def energy_change(structured_data: tuple,
                          spin_vector[int(indexes[2]) - 1], spin_vector[int(indexes[3]) - 1]])
 
     dh = 2 * spin_vector[metropolis_selection - 1] * np.dot(j, sigma_xy)
-
-    if external_field != 0:
-        dh += 2 * spin_vector[metropolis_selection - 1] * external_field
+    dh += 2 * spin_vector[metropolis_selection - 1] * external_field
 
     return dh
 
@@ -130,10 +131,13 @@ def run_metropolis(time_steps: int,
     accepted = 0
     instructions = indexation
 
-    energy = initial_energy(instructions)
-    magnetism = sum(instructions[10])
+    energy = initial_energy(instructions, external_mag)
+    magnetism = np.sum(instructions[10])
     initial_spin = instructions[10].copy()
     spin_correlation = 1
+
+    count_flips = np.zeros((n**2))
+    total_selection = np.zeros((n**2))
 
     track_energy = np.zeros(time_steps)
     track_magnetism = np.zeros(time_steps)                                                            # ensemble average
@@ -142,6 +146,8 @@ def run_metropolis(time_steps: int,
     track_energy[0] = energy
     track_magnetism[0] = magnetism
     track_spin_correlation[0] = spin_correlation
+
+    flip_counter = 0
 
     if include_plot:
         plt.imshow(np.reshape(np.reshape(instructions[10], -1), (n, n)), cmap="gnuplot")
@@ -153,13 +159,17 @@ def run_metropolis(time_steps: int,
 
     for i in tqdm(range(1, time_steps)):                                                         # Metropolis loop
 
-        metropolis_selection = np.random.randint(1, n**2)
+        metropolis_selection = np.random.randint(1, n**2 + 1)
         de = energy_change(instructions, metropolis_selection, external_mag)
+        total_selection[metropolis_selection - 1] += 1
 
         if rejection_condition(de, beta):
             accepted += 1                                                                        # increment acceptance
-            spin_correlation += - 2 * instructions[10][metropolis_selection - 1] * \
-                                  initial_spin[metropolis_selection-1]/n**2
+
+            count_flips[metropolis_selection - 1] += 1
+
+            spin_correlation += -2 * instructions[10][metropolis_selection - 1] * \
+                initial_spin[metropolis_selection-1]/n**2
             energy += de                                                                         # increment energy
             magnetism += - 2 * instructions[10][metropolis_selection - 1]                        # increment magnetism
             instructions[10][metropolis_selection - 1] *= -1                                     # flip spin
@@ -168,11 +178,28 @@ def run_metropolis(time_steps: int,
         track_energy[i] = energy
         track_magnetism[i] = magnetism
 
+        # if i % 1_000_000 == 0:
+        #     sns.kdeplot(data=count_flips, bw_adjust=.5)
+        #     plt.savefig("stats_{}.jpeg".format(flip_counter), dpi=200)
+        #     plt.close()
+        #     flip_counter += 1
+        #     plt.imshow(np.reshape(np.reshape(count_flips, -1), (n, n)) - np.sum(count_flips)/n**2, interpolation="sinc", cmap="jet")
+        #     # plt.title("Spin flip per 1 mln MC steps", fontsize=19)
+        #     plt.xticks([])
+        #     plt.yticks([])
+        #     # plt.colorbar()
+        #     plt.savefig("flip_{}.jpeg".format(flip_counter), dpi=800)
+        #     plt.close()
+        #     count_flips = np.zeros((n ** 2))
+
+    # clear_output(wait=False)
+
     if include_plot:
         plot_upper_bound(instructions[9], instructions[10])
         plot_probability(instructions[9], instructions[10])
         plot_ecm(track_energy / n**2, track_magnetism / n**2, track_spin_correlation,
                  n, energy, initial_temperature)
+        plot_mobility(count_flips, lattice_size, energy)
 
     print(accepted)
     print("Final energy E = {} eV".format(energy))
@@ -182,16 +209,18 @@ def run_metropolis(time_steps: int,
 
 pre_stored_data = relation_matrix(lattice_size)
 energy_vs_temperature = []
-external_magnetic_field = 0.77
+external_magnetic_field = 0
 t_min, t_max = 1, 2
-temperature_range = [1]  # np.linspace(0.1, 1, 10)
+temperature_range = [.5]  # np.linspace(0.1, 1, 10)
 
-for temperature in (temperature_range):
+for temperature in temperature_range:
+
     spins, final_energy = run_metropolis(metropolis_steps,
                                          pre_stored_data,
                                          external_magnetic_field,
                                          temperature,
-                                         lattice_size)
+                                         lattice_size,
+                                         include_plot=True)
     energy_vs_temperature.append(final_energy)
 
 

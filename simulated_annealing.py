@@ -164,6 +164,7 @@ def run_simulated_annealing(time_steps: int,
         track_magnetism[i] = magnetism
 
     if include_plot:
+
         plot_upper_bound(instructions[9], instructions[10])
         plot_probability(instructions[9], instructions[10])
         plot_ecm(track_energy/n**2, track_magnetism, track_spin_correlation,
