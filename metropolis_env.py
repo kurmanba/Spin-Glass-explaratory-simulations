@@ -3,7 +3,7 @@ from tqdm import tqdm
 import sqlite3
 from itertools import product
 from plot_utils import *
-import scipy.io
+# import scipy.io
 import os
 # import cProfile
 # import pstats
@@ -203,14 +203,12 @@ class Metropolis:
         """
         push_dict = defaultdict()
 
-        # Insert simulation parameters as well as addresses of the files stored
-
         push_dict["lattice_size"] = self.lattice_size
         push_dict["iterations"] = self.metropolis_steps
         push_dict["temperature"] = self.temperature
         push_dict["emf"] = self.emf
         push_dict["seed"] = self.seed
-        push_dict["results_final_energy"] = np.str(self.energy)
+        push_dict["results_final_energy"] = str(self.energy)
 
         mag_file = "{}_{}_{}_{}_{}_magnetism.npy".format(self.lattice_size,
                                                          self.metropolis_steps,
@@ -265,32 +263,48 @@ class Metropolis:
 
 
 if __name__ == '__main__':
-    lattice_sizes_sweep = [40]
+
+    lattice_sizes_sweep = [80]
     seeds_sweep = [int(i) for i in np.linspace(117, 119, 3, dtype=int)]
-    metropolis_steps_sweep = [int(400*i**2) for i in lattice_sizes_sweep]
-    external_magnetic_fields = [float(i) for i in np.linspace(0, 7, 20)]
-    temperatures = [float(i) for i in np.linspace(0.5, 7, 20)]
+    metropolis_steps_sweep = [int(200*i**2) for i in lattice_sizes_sweep]
+    external_magnetic_fields = [float(i) for i in np.linspace(-5, 5, 11)]
+    temperatures = [float(i) for i in np.linspace(0.1, 5, 15)]
     data_storage = "/Users/alisher/PycharmProjects/SpinGlass/data_storage"
 
     # Iterate over given data
-    iterator = product(lattice_sizes_sweep,
+    iterator = product(seeds_sweep,
+                       lattice_sizes_sweep,
                        metropolis_steps_sweep,
-                       seeds_sweep,
                        external_magnetic_fields,
                        temperatures)
 
-    with tqdm(total=1200) as progress_bar:
+    k_1_old, k_0_old = 0, -1
+    total_iterations = int(len(list(iterator)))
+
+    iterator = product(seeds_sweep,
+                       lattice_sizes_sweep,
+                       metropolis_steps_sweep,
+                       external_magnetic_fields,
+                       temperatures)
+
+    with tqdm(total=total_iterations) as progress_bar:
         for k in iterator:
-            metro = Metropolis(lattice_size=k[0],
-                               metropolis_steps=k[1],
+            if k[1] != k_1_old or k[0] != k_0_old:
+                generate_instructions = relation_matrix(k[1], k[0])
+
+            metro = Metropolis(lattice_size=k[1],
+                               metropolis_steps=k[2],
                                temperature=k[4],
-                               seed=k[2],
+                               seed=k[0],
                                external_magnetic_field=k[3],
-                               instructions=relation_matrix(k[0], k[2]),
+                               instructions=generate_instructions,
                                database_address="metropolis.db",
                                storage_address=data_storage)
 
-            for i in range(k[1]):
+            k_1_old, k_0_old = k[1], k[0]
+
+            np.random.seed(int(k[0]))
+            for i in range(k[2]):
                 metro.step_metropolis()
             metro.push_results()
             progress_bar.update(1)
