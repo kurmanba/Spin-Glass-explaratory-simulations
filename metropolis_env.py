@@ -10,14 +10,13 @@ import os
 
 
 class Metropolis:
-
     def __init__(self,
                  lattice_size: int,
                  metropolis_steps: int,
                  temperature: float,
                  seed: int,
                  external_magnetic_field: float,
-                 instructions: any,
+                 instructions: tuple,
                  database_address: str,
                  storage_address: str):
 
@@ -101,7 +100,7 @@ class Metropolis:
 
         Return:
         ______
-        bool: boolean condition of acceptance.
+        bool: condition of acceptance.
         """
         return de <= 0 or np.exp(-beta * de) > np.random.random()
 
@@ -180,7 +179,6 @@ class Metropolis:
         return None
 
     def extract_plots(self) -> None:
-
         """
         Return:
         ______
@@ -264,9 +262,9 @@ class Metropolis:
 
 if __name__ == '__main__':
 
-    lattice_sizes_sweep = [80]
+    lattice_sizes_sweep = [300]
     seeds_sweep = [int(i) for i in np.linspace(117, 119, 3, dtype=int)]
-    metropolis_steps_sweep = [int(200*i**2) for i in lattice_sizes_sweep]
+    metropolis_steps_sweep = [int(100*i**2) for i in lattice_sizes_sweep]
     external_magnetic_fields = [float(i) for i in np.linspace(-5, 5, 11)]
     temperatures = [float(i) for i in np.linspace(0.1, 5, 15)]
     data_storage = "/Users/alisher/PycharmProjects/SpinGlass/data_storage"

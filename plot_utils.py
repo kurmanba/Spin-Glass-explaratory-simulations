@@ -139,23 +139,22 @@ def plot_upper_bound(interaction_dict: defaultdict,
 def plot_probability(interaction_dict: defaultdict,
                      spins: np.ndarray):
 
-        spin_matrix_size = len(spins)
+    spin_matrix_size = len(spins)
+    visualization_sum_positives = []
+    visualization_sum_negatives = []
 
-        visualization_sum_positives = []
-        visualization_sum_negatives = []
+    for element in range(1, spin_matrix_size):
 
-        for element in range(1, spin_matrix_size):
+        if spins[element-1] == 1:
+            visualization_sum_positives.append(np.sum(interaction_dict[element]))
 
-            if spins[element-1] == 1:
-                visualization_sum_positives.append(np.sum(interaction_dict[element]))
+        if spins[element-1] == -1:
+            visualization_sum_negatives.append(np.sum(interaction_dict[element]))
 
-            if spins[element-1] == -1:
-                visualization_sum_negatives.append(np.sum(interaction_dict[element]))
+    print(np.mean(visualization_sum_negatives))
+    print(np.mean(visualization_sum_positives))
 
-        print(np.mean(visualization_sum_negatives))
-        print(np.mean(visualization_sum_positives))
-
-        return None
+    return None
 
 
 def plot_mobility(spin_mobility: np.ndarray,

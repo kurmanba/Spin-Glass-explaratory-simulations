@@ -1,5 +1,4 @@
 import sqlite3
-
 """ Managing results of parametric sweep with sqlite3"""
 
 
@@ -24,7 +23,6 @@ def create_database() -> None:
                 results_mobility_array   TEXT
                 )
                 """)
-
     db_conn.commit()
     db.close()
     return None
